@@ -38,7 +38,7 @@ php bin/console make:user
 #[ORM\Table(name: '`user`', schema: 'public')] 
 
 2.4 Для подключения бд настроить файл .env.local
-DATABASE_URL="postgresql://supchat:user@db:5432/chatex?serverVersion=16&charset=utf8"
+DATABASE_URL="postgresql://user:password@db:5432/chatex?serverVersion=16&charset=utf8"
 Могут возниктуть проблеммы с правами 
 ----------->ВНИМАТЕЛЬНО ВАЖНО!!!!!
 поменять права на папку app для пользователя user
@@ -104,7 +104,7 @@ $constraint = new IsTrue(
 https://getbootstrap.com/docs/5.3/getting-started/introduction/
 https://github.com/twbs/bootstrapp
 composer require twbs/bootstrap:5.3.8
-bin/console importmap:require bootstrap
+php bin/console importmap:require bootstrap
 
 // assets/app.js
 import 'bootstrap';
