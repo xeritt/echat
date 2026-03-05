@@ -1,0 +1,551 @@
+0. Настройка докера.
+0.1 Отредактировать Makefile заменить название проекта (Уже не нужно)
+COMPOSE=docker compose -p adminchat -f compose.yml --env-file $(current_dir)docker/.env.local
+0.2 Настроить порты если надо в файле compose.yml навзвние БД сменить!
+0.3 Отредактировать docker/.env.local поменять название проекта
+0.4 Сделать новый репо
+git init
+0.5 Сохранить первый коммит
+
+1. Установка симфони
+1.1 Запустить докер make docker.start
+1.2 Перед установкой удалить папку public в app/
+make shell.php
+rm -f -r public/
+1.3 composer create-project symfony/skeleton:"8.0.*" .
+1.4 composer require webapp
+1.5 Выйти из докера
+exit
+1.6 Перезапустить
+make docker.restart
+
+Сотрим http://localhost:8081/
+
+!!! Необязательно
+Поставить расширение VCode для БД
+DBCode - Database Management
+Подключиться к бд через VCode.
+
+2.Как сделать Form Login
+https://symfony.com/doc/current/security.html#form-login
+2.1 Install the SecurityBundle
+make shell.php
+composer require symfony/security-bundle
+2.2 Создать модель User
+php bin/console make:user
+
+2.3 Добавить в модель схему schema: 'public' в сушность User.php
+#[ORM\Table(name: '`user`', schema: 'public')] 
+
+2.4 Для подключения бд настроить файл .env.local
+DATABASE_URL="postgresql://supchat:user@db:5432/chatex?serverVersion=16&charset=utf8"
+Могут возниктуть проблеммы с правами 
+----------->ВНИМАТЕЛЬНО ВАЖНО!!!!!
+поменять права на папку app для пользователя user
+sudo chown -R user:user app/
+----------------------------------
+
+2.5 Сделать миграцию
+make shell.php
+php bin/console make:migration
+Выполнить миграцию для БД
+php bin/console doctrine:migrations:migrate
+
+2.6 Сгенерить форму логина
+php bin/console make:security:form-login
+
+3. Сделать добавление пользователя через контроллер.(Необязательно)
+4. Сделать добавление пользователя через команду.(Необязательно)
+php bin/console make:command app:greet
+
+5. Сделать добавление пользователя через Fixturex (Необязательно)
+https://symfony.com/bundles/DoctrineFixturesBundle/current/index.html
+Поставить bundle
+docker exec chat-php composer require --dev doctrine/doctrine-fixtures-bundle
+Сделать fixtures
+Добавить к бд
+docker exec chat-php php bin/console doctrine:fixtures:load --append
+
+6 Сделать форму регистрации
+6.1 Зайти bash докера 
+make shell.php
+6.2 Выполнить
+composer require symfonycasts/verify-email-bundle
+php bin/console make:registration-form
+
+****************************************
+Next:
+ 1) Install some missing packages:
+      composer require symfonycasts/verify-email-bundle
+ 2) In RegistrationController::verifyUserEmail():
+    * Customize the last redirectToRoute() after a successful email verification.
+    * Make sure you're rendering success flash messages or change the $this->addFlash() line.
+ 3) Review and customize the form, controller, and templates as needed.
+ 4) Run "php bin/console make:migration" to generate a migration for the newly added User::isVerified property.
+
+ Then open your browser, go to "/register" and enjoy your new form!
+****************************************
+
+----------->ВНИМАТЕЛЬНО ВАЖНО!!!!!
+поменять права на папку app для пользователя user
+sudo chown -R user:user app/
+----------------------------------
+
+Исправить ошибки в форме если ошибка
+// Recommended syntax using named arguments
+$constraint = new IsTrue(
+    message: 'You must accept the terms and conditions.',
+);
+
+Пройти в регистрацию.
+
+
+7. Подключение Bootstrap
+https://getbootstrap.com/docs/5.3/getting-started/introduction/
+https://github.com/twbs/bootstrapp
+composer require twbs/bootstrap:5.3.8
+bin/console importmap:require bootstrap
+
+// assets/app.js
+import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+прочитать add_style.txt
+Using Built-in Form Themes (Recommended)
+Bootstrap 5: Enable it in your config/packages/twig.yaml:
+yaml
+ twig:
+   form_themes: ['bootstrap_5_layout.html.twig']
+
+Finally, ensure you link your CSS file in your base template and define the styles for the classes you've added
+{# templates/base.html.twig #}
+<head>
+    {# ... #}
+    <link href="{{ asset('css/style.css') }}" type="text/css" rel="stylesheet">
+</head>
+
+Example CSS Style
+A basic modern style to accompany the custom classes above:
+css
+
+/* public/css/styles.css */
+.registration-form-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.form-group { margin-bottom: 1rem; }
+
+.my-custom-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.btn-submit {
+    background-color: #007bff;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    cursor: pointer;
+}
+
+You can inject CSS classes directly into the HTML attributes of form fields within your RegistrationFormType.php. 
+php
+
+// src/Form/RegistrationFormType.php
+public function buildForm(FormBuilderInterface $builder, array $options): void
+{
+    $builder
+        ->add('email', EmailType::class, [
+            'attr' => ['class' => 'form-input-field', 'placeholder' => 'Enter email'],
+            'label_attr' => ['class' => 'custom-label-class'],
+        ])
+        ->add('plainPassword', PasswordType::class, [
+            'attr' => ['class' => 'form-input-field'],
+        ]);
+}
+
+Используйте код с осторожностью.
+3. Custom Rendering in Twig
+For full control over the HTML structure, you can render fields individually and wrap them in custom CSS containers. 
+twig
+
+{# templates/registration/register.html.twig #}
+{{ form_start(registrationForm, {'attr': {'class': 'registration-form-container'}}) }}
+    
+    <div class="form-group">
+        {{ form_label(registrationForm.email) }}
+        {{ form_widget(registrationForm.email, {'attr': {'class': 'my-custom-input'}}) }}
+        <div class="error-msg">{{ form_errors(registrationForm.email) }}</div>
+    </div>
+
+    <button type="submit" class="btn-submit">Register</button>
+
+{{ form_end(registrationForm) }}
+
+
+8. Настроить VCode для работы с bootstrap
+Поставить расширение
+Twig Language Support
+Bootstrap IntelliSense
+Bootstrap Class Autocomplete
+
+Добавить в настройки
+"emmet.includeLanguages": {
+			"twig": "html",
+			"html.twig": "html"
+		},
+"files.associations": {
+			"*.html.twig": "html",
+}
+
+9. посмотреть https://stimulus.hotwired.dev/
+https://stimulus.hotwired.dev/handbook/hello-stimulus
+<div data-controller="hello">
+		<input type="text">
+		<button>Greet</button>
+	</div>
+	<div data-controller="hello">
+		<input type="text">
+		<button data-action="click->hello#greet">Greet</button>
+	</div>
+
+/assets/controllers/hello_controller.js
+
+	greet() {
+			console.log("Hello, Stimulus!", this.element)
+		}
+
+10. https://turbo.hotwired.dev/handbook/
+https://symfony.com/bundles/ux-turbo/current/index.html#accelerating-navigation-with-turbo-drive
+<turbo-frame id="product-reviews">
+    {# Initial content or a link to load content lazily #}
+</turbo-frame>
+In the Controller/Response: The server endpoint that handles the frame's requests 
+should ideally return a full HTML page, but the Turbo client will only seek the matching 
+<turbo-frame id="product-reviews"> within that response to update the page.
+#[Route(path: '/messages', name: 'messages')]
+public function messages(Request $request):Response {
+			$frameId = $request->headers->get('Turbo-Frame');
+			return new Response('<!DOCTYPE html><html><body><turbo-frame id="'.$frameId.'">Test messages successfully!</turbo-frame></body></html>');
+}
+
+11.
+https://tailwindcss.com/docs/installation/framework-guides/symfony
+https://symfony.com/doc/current/form/tailwindcss.html#customization
+https://symfony.com/blog/new-in-symfony-5-3-tailwind-css-form-theme
+
+
+12 Easy Admin 4
+https://symfony.com/bundles/EasyAdminBundle/current/index.html
+https://symfony.com/bundles/EasyAdminBundle/current/dashboards.html
+
+composer require easycorp/easyadmin-bundle
+php bin/console make:admin:dashboard
+php bin/console cache:clear
+http://locakhost:8081/admin
+
+Генерируем Admin Grud для User
+php bin/console make:admin:crud
+http://localhost:8081/admin/user
+
+Настраиваем редактирование пользователя, роли и хешируем пароль
+https://dev.to/nabbisen/symfony-6-user-authentication-4ek
+https://dev.to/nabbisen/symfony-6-and-easyadmin-4-hashing-password-3eec
+
+Или поменять UserCrudController.php
+
+<?php
+
+namespace App\Controller\Admin;
+
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Form\Extension\Core\Type\{PasswordType, RepeatedType};
+use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+
+//#[IsGranted('ROLE_ADMIN', statusCode: 403)]
+class UserCrudController extends AbstractCrudController
+{
+    public static function getEntityFqcn(): string
+    {
+        return User::class;
+    }
+
+		private UserPasswordHasherInterface $passwordHasher;
+
+    public function __construct(UserPasswordHasherInterface $passwordHasher)
+    {
+        $this->passwordHasher = $passwordHasher;
+    }
+
+    public function configureFields(string $pageName): iterable
+    {
+        //return [
+				$fields = [
+            IdField::new('id')->hideOnForm(),
+            EmailField::new('email'),
+            ChoiceField::new('roles')
+                ->setChoices([
+                    'Роль пользователя' => 'ROLE_USER',
+                    'Роль админа' => 'ROLE_ADMIN'
+                ])
+                ->allowMultipleChoices(),
+           /* TextField::new('password')
+                ->onlyWhenCreating() // Показывать только при создании
+                ->setRequired(true)
+                ->setHelp('Введите пароль'),
+            TextField::new('password')
+                ->onlyWhenUpdating() // Отдельное поле для обновления
+                ->setLabel('Новый пароль')
+                ->setRequired(false)
+								->setFormTypeOption('empty_data', '')
+                ->setHelp('Оставьте пустым, если не хотите менять пароль')*/
+        ];
+
+				$password = TextField::new('password')
+            ->setFormType(RepeatedType::class)
+            ->setFormTypeOptions([
+                'type' => PasswordType::class,
+                'first_options' => ['label' => 'Password (Оставьте пустым, если не хотите менять пароль)'],
+                'second_options' => ['label' => '(Repeat)'],
+                'mapped' => false,
+            ])
+            ->setRequired($pageName === Crud::PAGE_NEW)
+            ->onlyOnForms();
+        $fields[] = $password;
+				return $fields;
+    }
+
+    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        $this->encodePassword($entityInstance);
+        parent::persistEntity($entityManager, $entityInstance);
+    }
+
+    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+				
+        $this->encodePassword($entityInstance);
+        parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    private function encodePassword(User $user): void
+    {
+
+				if (!$user->getPassword()) {
+            return;
+        }
+
+				$request = $this->getContext()->getRequest();
+				$params = $request->request->all();
+				$newpass = '';
+				if (isset($params['User']['password']['first'])) $newpass = $params['User']['password']['first'];
+				if ($newpass =='') return;
+
+				$user->setPassword(
+            $this->passwordHasher->hashPassword($user, $user->getPassword())
+        );
+    }
+}
+
+
+
+------------>ВАЖНО
+empty_data vs. data: The empty_data option is the value used when the form 
+is submitted with an empty value for that field. It is not used to set the 
+initial value when the form is first rendered (that's handled by the entity's 
+property value or the data option).
+empty_data против data: Параметр empty_data — это значение, используемое при 
+отправке формы с пустым значением для этого поля. Он не используется для установки
+ начального значения при первом отображении формы (это обрабатывается значением 
+ свойства сущности или параметром data).
+----------------------------------------------
+Добавить роль ROLE_ADMIN в бд для админа
+
+Добавить роль админа на DashboardController и UserCrudController
+#[IsGranted('ROLE_ADMIN', statusCode: 403)]
+
+
+
+13. Генерация моделей Chat и Message
+
+php bin/console make:entity 
+Chat
+(не надо в сявязанных полях указывать id)
+user -> ManyToOne ->User
+create_at -> datetime_immutable
+update_at -> datetime_immutable
+
+php bin/console make:entity 
+Message
+chat -> ManyToOne ->Chat
+user -> ManyToOne ->User
+content -> text
+create_at -> datetime_immutable
+
+Создаем миграции
+php bin/console make:migration
+
+Отправляем в бд
+php bin/console doctrine:migrations:migrate
+
+Doctrine
+, which integrates tightly with Symfony, supports four types of relationships between entities, defined using PHP attributes (or annotations in older versions). These are: 
+
+    ManyToOne: This is the most common and often considered the "king" of relationships. In a ManyToOne relationship, many entities (e.g., Products) can relate to a single other entity (e.g., a Category). The foreign key is stored on the "many" side (the Product table).
+    OneToMany: This is the inverse side of a ManyToOne relationship (e.g., a Category can have many Products). It is mapped by referencing the field on the owning (ManyToOne) side, and typically uses an ArrayCollection to manage the related entities.
+    OneToOne: A one-to-one relationship links a single entity to a single other entity (e.g., a User has one Profile).
+    ManyToMany: In a ManyToMany relationship, each entity can be related to multiple entities of the other type (e.g., an Article can have many Tags, and each Tag can be associated with many Articles). This is typically managed via a separate join table in the database, but Doctrine abstracts this away, allowing developers to work with objects and collections directly. 
+
+Key Concepts
+
+    Owning vs. Inverse Side: In bidirectional relationships, one side is the "owning" side, and the other is the "inverse" side. The owning side is where Doctrine checks for changes and persists the relationship to the database (it holds the foreign key or manages the join table). The inverse side is mapped by referencing the field on the owning side.
+    Mapping: Relationships are defined in entity classes using PHP attributes (like #[ORM\ManyToOne(...)] or #[ORM\ManyToMany(...)]) or annotations (e.g., @ORM\ManyToOne). The targetEntity and mappedBy or inversedBy parameters are used to specify how the entities relate to each other.
+    Persisting: To save a relationship, you set the related object(s) on the entity's property and then persist the entity using the EntityManager. Doctrine automatically handles the underlying SQL logic.
+    Fetching: Related objects can be fetched automatically when accessed (lazy loading) or explicitly joined in DQL/Query Builder queries to avoid performance issues like the N+1 problem. 
+
+Overcoming Many-to-Many Challenges with Symfony/Doctrine
+21 сент. 2023 г. — Using the PHP + Symfony/Doctrine stack, the schema is represented as a many-to-many relationship as shown below: Press enter or cl...
+Medium
+How to Work with Doctrine Associations / Relations - Symfony
+Ignore the Doctrine metadata for a moment. You now have two classes - Product and Category , with a natural many-to-one relationsh...
+Symfony
+The 4 (2?) Possible Relation Types > Symfony 5 - SymfonyCasts
+Keep on Learning! ... With a Subscription, click any sentence in the script to jump to that part of the video! Officially, there a...
+SymfonyCasts
+How to Work with Doctrine Associations / Relations - Symfony
+Doctrine. How to Work with Doctrine Associations / Relations. The ManyToOne / OneToMany Association. Mapping the ManyToOne Relatio...
+Symfony
+Как работать с ассоциациями / отношениями Doctrine
+25 авг. 2025 г. — Для начала, вам нужно определить, какое отношение использовать. Если обе стороны отношений будут содержать множество с другой стор...
+Документация Symfony
+Many-To-Many Relationship > Symfony, Doctrine Relations ...
+Unveiling the Join Table. ... This is how you structure a ManyToMany relationship in the database: with a join table. The real mag...
+SymfonyCasts
+Adding the ManyToOne Relation - SymfonyCasts
+Adding the ManyToOne Relation * Generating the Relationship. * Generating the Other (Inverse) Side of the Relation. * Looking at t...
+SymfonyCasts
+Collection Criteria for Custom Relation Queries > Symfony 5
+Popular Search Topics * The Answer Entity. 5:32. * The ManyToOne Relation. Challenge 2.2: unanswered. 8:35. * Saving Relations. 3:
+SymfonyCasts
+Many To One: The King of Relationships > Symfony, Doctrine ...
+The wizard walks us through the four different types of relations. Check the descriptions: we want a ManyToOne where each part bel...
+SymfonyCasts·
+Many-to-Many but with Extra Data > Symfony, Doctrine Relations ...
+Popular Search Topics * Setup. 2:10. * Part Entity. 3:12. * Many To One: The King of Relationships. Challenge 3.2: unanswered. 4:3...
+SymfonyCasts
+Saving a Relationship - SymfonyCasts
+That's it. Seriously! The only tricky part is that you set the entire object, not the ID. With Doctrine relations, you almost need...
+SymfonyCasts
+The 4 (2?) Possible Relation Types - SymfonyCasts
+The 2 Types of Relationships So, really, if you are trying to figure out which relationship type to use in a situation... well... ...
+SymfonyCasts
+Symfony 5: Mastering Doctrine Relations - SymfonyCasts
+In the part 1 of the Doctrine Tutorial we got some serious work done with Doctrine: creating entity classes, making custom queries...
+SymfonyCasts
+Databases and the Doctrine ORM (Symfony 2.x Docs)
+Although the Symfony Framework doesn't integrate any component to work with databases, it provides tight integration with a third-
+Symfony
+
+------------------------------------------------
+14. Делаем Crud. Я есть CRUD
+https://symfony.com/bundles/SymfonyMakerBundle/current/index.html
+Посмотреть какие есть команды
+php bin/console list make
+
+Делаем Create CRUD for Doctrine entity class
+php bin/console make:crud Chat
+
+
+15. Настраиваем аудит для created_at и udpated_at
+
+В моделе включаем 
+use DateTimeImmutable;
+
+Перед классам модели
+#[ORM\HasLifecycleCallbacks] // Required to enable lifecycle events
+
+		#[ORM\PrePersist]
+    public function setCreatedAtValue(): void
+    {
+        $this->created_at = new DateTimeImmutable();
+        // Optional: also set updated_at at the same time
+        $this->setUpdatedAtValue();
+    }
+
+    /**
+     * Update updated_at automatically on entity update.
+     */
+    #[ORM\PreUpdate]
+    public function setUpdatedAtValue(): void
+    {
+        $this->updated_at = new DateTimeImmutable();
+    }
+ В форме убрать поля.
+ Сделать кнопки красивыми btn btn-primary
+
+16 Редактируем создание чата в контроллере
+				$chat = new Chat();
+				$user = $this->getUser();
+				$chat->setOwner($user);
+				$entityManager->persist($chat);
+				$entityManager->flush();
+
+17 Сделать Crud для message
+php bin/console make:crud Message
+
+БД настройка
+Зайти в докер консоль mysql
+make shell.mysql
+
+## Начальная настройка MySql если возникают проблемы при первом запуске 
+
+```shell
+make shell.mysql
+#mysql -u root
+mysql> CREATE USER 'mysql.infoschema'@'localhost' IDENTIFIED BY 'some_pass';
+mysql> GRANT SELECT ON *.* TO `mysql.infoschema`@`localhost`;
+
+mysql> CREATE USER 'root'@'localhost' IDENTIFIED BY 'some_pass';
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;
+mysql> CREATE USER 'root'@'%' IDENTIFIED BY 'some_pass';
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+
+Или добавиь пользователя если надо
+mysql -u root -p
+пароля нет просто нажать Enter
+
+CREATE USER 'user'@'%' IDENTIFIED BY 'user';
+GRANT ALL PRIVILEGES ON *.* TO 'user'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+EXIT;
+
+Добавить файл env.local в папку app/
+
+
+Как сделать Form Login
+https://symfony.com/doc/current/security.html#form-login
+Install the SecurityBundle
+composer require symfony/security-bundle
+Создать модель User
+php bin/console make:user
+Сделать миграцию
+php bin/console make:migration
+Выполнить миграцию для БД
+php bin/console doctrine:migrations:migrate
+
+
+php bin/console make:security:form-login
+
