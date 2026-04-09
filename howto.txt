@@ -257,8 +257,51 @@ http://localhost:8081/admin/user
 https://dev.to/nabbisen/symfony-6-user-authentication-4ek
 https://dev.to/nabbisen/symfony-6-and-easyadmin-4-hashing-password-3eec
 
+Подключаем меню в dashboard
+    public function configureMenuItems(): iterable
+    {
+        yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
+        // yield MenuItem::linkTo(SomeCrudController::class, 'The Label', 'fas fa-list');
+				yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa fa-users')->setDefaultSort(['email' => 'DESC']);
+				yield MenuItem::linkToLogout('Logout', 'fa fa-exit');
+    }
+
 Или поменять UserCrudController.php
 
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+
+public function configureFields(string $pageName): iterable
+{
+		return [
+			IdField::new('id')->hideOnForm(),
+				EmailField::new('email'),
+				ChoiceField::new('roles')
+				->setChoices([
+						'Роль пользователя' => 'ROLE_USER',
+						'Роль админа' => 'ROLE_ADMIN'
+				])
+				->allowMultipleChoices(),
+				BooleanField::new('isVerified')
+		];
+}
+
+Чтобы работали роли меняем в User.php
+/**
+	* @see UserInterface
+	*/
+public function getRoles(): array
+{
+		$roles = $this->roles;
+		// guarantee every user at least has ROLE_USER
+		//$roles[] = 'ROLE_USER'; <---- ЗАКОМЕНТИРОВАТЬ ЭТУ СТРОКУ
+
+		return array_unique($roles);
+}
+
+
+Или решение с паролями поменять UserCrudController.php
 <?php
 
 namespace App\Controller\Admin;
@@ -377,6 +420,99 @@ empty_data против data: Параметр empty_data — это значе�
 Добавить роль админа на DashboardController и UserCrudController
 #[IsGranted('ROLE_ADMIN', statusCode: 403)]
 
+
+
+Меняем форму Логина 
+Для этого подключаем поля email и password
+/app/config/packages/security.yaml
+    firewalls:
+        dev:
+        main:
+            form_login:
+                username_parameter: email
+                password_parameter: password
+
+Отредактировать /app/src/Controller/SecurityController.php
+
+	use Symfony\Component\Routing\RouterInterface;
+
+	private RouterInterface $router;
+
+	// Inject the RouterInterface via the constructor
+	public function __construct(RouterInterface $router)
+	{
+			$this->router = $router;
+	}
+
+в public function login заменить выдачу шаблона
+return $this->render('@EasyAdmin/page/login.html.twig', [
+					// parameters usually defined in Symfony login forms
+					'error' => $error,
+					'last_username' => $lastUsername,
+
+					// OPTIONAL parameters to customize the login form:
+
+					// the translation_domain to use (define this option only if you are
+					// rendering the login template in a regular Symfony controller; when
+					// rendering it from an EasyAdmin Dashboard this is automatically set to
+					// the same domain as the rest of the Dashboard)
+					'translation_domain' => 'admin',
+
+					// by default EasyAdmin displays a black square as its default favicon;
+					// use this method to display a custom favicon: the given path is passed
+					// "as is" to the Twig asset() function:
+					// <link rel="shortcut icon" href="{{ asset('...') }}">
+					'favicon_path' => '/favicon-admin.svg',
+
+					// the title visible above the login form (define this option only if you are
+					// rendering the login template in a regular Symfony controller; when rendering
+					// it from an EasyAdmin Dashboard this is automatically set as the Dashboard title)
+					'page_title' => 'ACME login',
+
+					// the string used to generate the CSRF token. If you don't define
+					// this parameter, the login form won't include a CSRF token
+					'csrf_token_intention' => 'authenticate',
+
+					// the URL users are redirected to after the login (default: '/admin')
+					//'target_path' => $this->generateUrl('admin_dashboard'),
+					//'target_path' => $this->generateUrl('admin'),
+					'target_path' => $this->router->generate('admin_user_index'),
+					// the label displayed for the username form field (the |trans filter is applied to it)
+					'username_label' => 'Your username',
+
+					// the label displayed for the password form field (the |trans filter is applied to it)
+					'password_label' => 'Your password',
+
+					// the label displayed for the Sign In form button (the |trans filter is applied to it)
+					'sign_in_label' => 'Log in',
+
+					// the 'name' HTML attribute of the <input> used for the username field (default: '_username')
+					//'username_parameter' => 'my_custom_username_field',
+					'username_parameter' => 'email',
+					// the 'name' HTML attribute of the <input> used for the password field (default: '_password')
+					//'password_parameter' => 'my_custom_password_field',
+					'password_parameter' => 'password',
+					// whether to enable or not the "forgot password?" link (default: false)
+					'forgot_password_enabled' => false,
+
+					// the path (i.e. a relative or absolute URL) to visit when clicking the "forgot password?" link (default: '#')
+					//'forgot_password_path' => $this->generateUrl('...', ['...' => '...']),
+
+					// the label displayed for the "forgot password?" link (the |trans filter is applied to it)
+					'forgot_password_label' => 'Forgot your password?',
+
+					// whether to enable or not the "remember me" checkbox (default: false)
+					'remember_me_enabled' => true,
+
+					// remember me name form field (default: '_remember_me')
+					'remember_me_parameter' => 'custom_remember_me_param',
+
+					// whether to check by default the "remember me" checkbox (default: false)
+					'remember_me_checked' => true,
+
+					// the label displayed for the remember me checkbox (the |trans filter is applied to it)
+					'remember_me_label' => 'Remember me',
+			]);
 
 
 13. Генерация моделей Chat и Message
