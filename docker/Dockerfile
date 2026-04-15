@@ -38,8 +38,8 @@ COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 RUN composer self-update -vvv && chmod 777 /tmp
 
 RUN apk add git
-RUN apk add mc
-
+##RUN apk add mc
+RUN apk add make
 ##RUN apk add php84-pdo_mysql
 
 WORKDIR /app

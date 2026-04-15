@@ -109,13 +109,16 @@ php bin/console importmap:require bootstrap
 // assets/app.js
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+
 прочитать add_style.txt
 Using Built-in Form Themes (Recommended)
 Bootstrap 5: Enable it in your config/packages/twig.yaml:
+// config/packages/twig.yaml
 yaml
  twig:
    form_themes: ['bootstrap_5_layout.html.twig']
 
+Если хотим подключить свой файл стиля
 Finally, ensure you link your CSS file in your base template and define the styles for the classes you've added
 {# templates/base.html.twig #}
 <head>

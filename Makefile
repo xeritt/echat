@@ -1,10 +1,31 @@
 COMPOSE=docker compose -f compose.yml --env-file docker/.env.local
 
 composer.install:
-	$(COMPOSE) exec php-fpm composer install
+	composer install
 
-db.migrate:
-	$(COMPOSE) exec php-fpm php bin/console doctrine:migrations:migrate -n
+migration:
+	php bin/console make:migration
+
+migrate:
+	bin/console doctrine:migrations:migrate -n
+
+entity:
+	php bin/console make:entity
+
+list:
+	php bin/console list make
+
+crud:
+	php bin/console make:crud
+
+user:
+	php bin/console make:user
+
+registration:
+	php bin/console make:registration-form
+
+login:
+	php bin/console make:security:form-login
 
 docker.build: docker.stop
 	$(COMPOSE) build --no-cache
