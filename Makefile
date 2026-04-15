@@ -51,7 +51,7 @@ shell.nginx:
 	$(COMPOSE) exec nginx sh
 
 shell.php:
-	$(COMPOSE) exec php-fpm sh
+	$(COMPOSE) exec php-fpm bash
 
 yarn.build:
 	$(COMPOSE) exec php-fpm yarn build

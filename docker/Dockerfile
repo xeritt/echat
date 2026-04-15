@@ -41,6 +41,7 @@ RUN apk add git
 ##RUN apk add mc
 RUN apk add make
 ##RUN apk add php84-pdo_mysql
+RUN apk add bash
 
 WORKDIR /app
 # ************************************* #
