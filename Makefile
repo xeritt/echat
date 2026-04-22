@@ -7,7 +7,7 @@ migration:
 	php bin/console make:migration
 
 migrate:
-	bin/console doctrine:migrations:migrate -n
+	php bin/console doctrine:migrations:migrate -n
 
 entity:
 	php bin/console make:entity
